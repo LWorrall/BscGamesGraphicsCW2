@@ -33,6 +33,37 @@ void SceneBasic_Uniform::initScene() {
 	view = glm::lookAt(vec3(0.0f, 1.5f, 2.0f), vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	projection = mat4(1.0f);
 
+	// Array for quad
+	GLfloat verts[] = {
+	-1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f,
+	-1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f, -1.0f, 1.0f, 0.0f
+	};
+	GLfloat tc[] = {
+	0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+	0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
+	};
+
+	// Set up the buffers
+	unsigned int handle[2];
+	glGenBuffers(2, handle);
+	glBindBuffer(GL_ARRAY_BUFFER, handle[0]);
+	glBufferData(GL_ARRAY_BUFFER, 6 * 3 * sizeof(float), verts, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, handle[1]);
+	glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), tc, GL_STATIC_DRAW);
+
+	// Set up the vertex array object
+	glGenVertexArrays(1, &quad);
+	glBindVertexArray(quad);
+	glBindBuffer(GL_ARRAY_BUFFER, handle[0]);
+	glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0); // Vertex position
+	glBindBuffer(GL_ARRAY_BUFFER, handle[1]);
+	glVertexAttribPointer((GLuint)2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(2); // Texture coordinates
+	glBindVertexArray(0);
+	
+	setupFBO();
+
 	prog.setUniform("Light.L", glm::vec3(0.4f));
 	prog.setUniform("Light.Position", view * lightPos);
 
@@ -40,6 +71,42 @@ void SceneBasic_Uniform::initScene() {
 	prog.setUniform("Fog.MinDist", 5.0f);
 	prog.setUniform("Fog.Colour", vec3(0.5f, 0.5f, 0.5f));
 }
+
+void SceneBasic_Uniform::setupFBO()
+{
+	GLuint depthBuf, posTex, normTex, colourTex;
+	// Create and bind the FBO
+	glGenFramebuffers(1, &deferredFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, deferredFBO);
+	// The depth buffer
+	glGenRenderbuffers(1, &depthBuf);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthBuf);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	// Create the textures for position, normal and color
+	createGBufTex(GL_TEXTURE0, GL_RGB32F, posTex); // Position
+	createGBufTex(GL_TEXTURE1, GL_RGB32F, normTex); // Normal
+	createGBufTex(GL_TEXTURE2, GL_RGB8, colourTex); // Color
+	// Attach the textures to the framebuffer
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuf);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, posTex, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normTex, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, colourTex, 0);
+	GLenum drawBuffers[] = { GL_NONE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(4, drawBuffers);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void SceneBasic_Uniform::createGBufTex(GLenum texUnit, GLenum format, GLuint & texid)
+{
+	glActiveTexture(texUnit);
+	glGenTextures(1, &texid);
+	glBindTexture(GL_TEXTURE_2D, texid);
+	glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+}
+
 
 void SceneBasic_Uniform::compile()
 {
@@ -80,11 +147,11 @@ void BindandSetParams(GLuint tex, int index)
 	// Choose which of the two samplers to use.
 	switch (index)
 	{
-	case 0:
-		glActiveTexture(GL_TEXTURE0);
+	case 3:
+		glActiveTexture(GL_TEXTURE3);
 		break;
-	case 1:
-		glActiveTexture(GL_TEXTURE1);
+	case 4:
+		glActiveTexture(GL_TEXTURE4);
 		break;
 	}
 	// Bind the texture file that is passed into the function.
@@ -101,6 +168,10 @@ void BindandSetParams(GLuint tex, int index)
 
 void SceneBasic_Uniform::drawScene()
 {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	prog.setUniform("Light.Position", view * lightPos);
+
 	prog.setUniform("Material.Rough", 0.9f);
 	prog.setUniform("Material.Metal", 1);
 	prog.setUniform("Material.Colour", glm::vec3(0.5f,0.5f, 0.5f));
@@ -109,8 +180,8 @@ void SceneBasic_Uniform::drawScene()
 	GLuint barrelTex = Texture::loadTexture("media/texture/barrel.png");
 	GLuint mossTex = Texture::loadTexture("media/texture/moss.png");
 	//Then bind them and set their texture parameters.
-	BindandSetParams(barrelTex, 0);
-	BindandSetParams(mossTex, 1);
+	BindandSetParams(barrelTex, 3);
+	BindandSetParams(mossTex, 4);
 
 	// For loop to render 5 different barrels spaced apart.
 	float distance = 0.0f;
@@ -126,7 +197,7 @@ void SceneBasic_Uniform::drawScene()
 
 	// Load the ground texture, and pass it to the function to bind and set texture parameters.
 	GLuint planeTexID = Texture::loadTexture("media/texture/ground.png");
-	BindandSetParams(planeTexID, 0);
+	BindandSetParams(planeTexID, 3);
 
 	model = mat4(1.0f);
 	prog.setUniform("Material.Rough", 0.9f);
@@ -137,12 +208,35 @@ void SceneBasic_Uniform::drawScene()
 	plane.render();
 }
 
+void SceneBasic_Uniform::pass1()
+{
+	prog.setUniform("Pass", 1);
+	glBindFramebuffer(GL_FRAMEBUFFER, deferredFBO);
+	drawScene();
+	glFinish();
+}
+
+void SceneBasic_Uniform::pass2()
+{
+	prog.setUniform("Pass", 2);
+	// Revert to default framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+	view = mat4(1.0);
+	model = mat4(1.0);
+	projection = mat4(1.0);
+	setMatrices();
+	// Render the quad
+	glBindVertexArray(quad);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+
 void SceneBasic_Uniform::render()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	prog.setUniform("Light.Position", view * lightPos);
-	drawScene();
+	pass1();
+	pass2();
 }
 
 void SceneBasic_Uniform::resize(int w, int h)

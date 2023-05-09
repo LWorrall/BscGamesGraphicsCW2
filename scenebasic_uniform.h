@@ -14,6 +14,9 @@ class SceneBasic_Uniform : public Scene
 private:
     GLSLProgram prog;
 
+    GLuint deferredFBO;
+    GLuint quad;
+
     Plane plane;
     std::unique_ptr<ObjMesh> barrel;
     
@@ -31,6 +34,11 @@ public:
     void drawScene();
     void resize(int, int);
     void setMatrices();
+
+    void setupFBO();
+    void createGBufTex(GLenum, GLenum, GLuint&);
+    void pass1();
+    void pass2();
 };
 
 #endif // SCENEBASIC_UNIFORM_H
