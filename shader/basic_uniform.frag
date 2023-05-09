@@ -21,7 +21,7 @@ layout (binding = 1) uniform sampler2D Tex2;
 uniform struct lightInfo {
     vec4 Position;
     vec3 L;
-} Light[3];
+} Light;
 
 // Information for the material of the object being rendered.
 uniform struct MaterialInfo {
@@ -60,18 +60,18 @@ vec3 schlickFresnesl (float lDotH ) {
     return f0 + (1 - f0) * pow(1.0 - lDotH, 5);
 }
 
-vec3 microfacetModel( int lightIdx, vec3 position, vec3 n) {
+vec3 microfacetModel(vec3 position, vec3 n) {
     vec3 diffuseBrdf = vec3(0.0);   // Metallic.
     if (!Material.Metal) {
         diffuseBrdf = Material.Colour;
     }
 
     vec3 l = vec3(0.0),
-    lightI = Light[lightIdx].L;
-    if (Light[lightIdx].Position.w == 0.0) {
-        l = normalize(Light[lightIdx].Position.xyz);
+    lightI = Light.L;
+    if (Light.Position.w == 0.0) {
+        l = normalize(Light.Position.xyz);
     }   else {
-        l = Light[lightIdx].Position.xyz - position;
+        l = Light.Position.xyz - position;
         float dist = length(l);
         l = normalize(l);
         lightI /= (dist * dist);
@@ -98,23 +98,19 @@ vec3 microfacetModel( int lightIdx, vec3 position, vec3 n) {
 
 
 void main() {
+
+    // For 3 lights.
     vec3 sum = vec3(0);
     vec3 n = normalize(Normal);
-    for (int i = 0; i < 3; i++) {
-        sum += microfacetModel(i, Position, n);
-    }
+    sum += microfacetModel(Position, n);
 
-    // Gamma
+    // Calculate gamma.
     sum = pow( sum, vec3(1.0/2.2) );
     float dist = abs( Position.z ); // Distance calculations.
 
     // FogFactor calculation.
     float fogFactor = (Fog.MaxDist - dist) / (Fog.MaxDist - Fog.MinDist);
     fogFactor = clamp( fogFactor, 0.0, 1.0 );   // Clamp values.
-
-    // Colour received from the Blinn-Phong calculation.
-    //vec3 shadeColour = blinnPhong(normalize(Normal), Position);
-
 
     // Assign a colour based on the fogFactor using mix.
     vec3 colour = mix( Fog.Colour, sum, fogFactor );

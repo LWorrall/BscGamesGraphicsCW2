@@ -28,7 +28,6 @@ public:
     void initScene();
     void update( float t );
     void render();
-    void drawSpot(const glm::vec3& pos, float rough, int metal, const glm::vec3& colour);
     void drawScene();
     void resize(int, int);
     void setMatrices();

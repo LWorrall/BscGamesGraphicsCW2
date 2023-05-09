@@ -33,12 +33,8 @@ void SceneBasic_Uniform::initScene() {
 	view = glm::lookAt(vec3(0.0f, 1.5f, 2.0f), vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	projection = mat4(1.0f);
 
-	prog.setUniform("Light[0].L", glm::vec3(0.4f));
-	prog.setUniform("Light[0].Position", view * lightPos);
-	prog.setUniform("Light[1].L", glm::vec3(0.0f));
-	prog.setUniform("Light[1].Position", glm::vec4(0, 0.15f, -1.0f, 0));
-	prog.setUniform("Light[2].L", glm::vec3(0.0f));
-	prog.setUniform("Light[2].Position", view * glm::vec4(-7, 3, 7, 1));
+	prog.setUniform("Light.L", glm::vec3(0.4f));
+	prog.setUniform("Light.Position", view * lightPos);
 
 	prog.setUniform("Fog.MaxDist", 15.0f);
 	prog.setUniform("Fog.MinDist", 5.0f);
@@ -103,18 +99,6 @@ void BindandSetParams(GLuint tex, int index)
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-void SceneBasic_Uniform::drawSpot(const glm::vec3& pos, float rough, int metal, const glm::vec3& colour) {
-	model = glm::mat4(1.0f);
-	prog.setUniform("Material.Rough", rough);
-	prog.setUniform("Material.Metal", metal);
-	prog.setUniform("Material.Colour", colour);
-	model = glm::translate(model, pos);
-	model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-	setMatrices();
-	barrel->render();
-}
-
 void SceneBasic_Uniform::drawScene()
 {
 	prog.setUniform("Material.Rough", 0.9f);
@@ -132,7 +116,6 @@ void SceneBasic_Uniform::drawScene()
 	float distance = 0.0f;
 	for (int i = 0; i < 5; i++) {
 		model = mat4(1.0f);
-
 		model = glm::translate(model, vec3(distance * 0.6f - 1.0f, 0.0f, -distance));
 		
 		setMatrices();
@@ -158,7 +141,7 @@ void SceneBasic_Uniform::render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	prog.setUniform("Light[0].Position", view * lightPos);
+	prog.setUniform("Light.Position", view * lightPos);
 	drawScene();
 }
 
