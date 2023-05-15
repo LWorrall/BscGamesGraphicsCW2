@@ -1,8 +1,9 @@
 #version 460
-const float PI=3.14159265358979323846;
-
 // The fragment shader renders the 3D scene with lighting and fog effects.
 // This shader is also responsible for applying multi-texturing to the barrels.
+// PBR shading has been implemented.
+
+const float PI=3.14159265358979323846;
 
 // Declare input variables.
 in vec3 Position;
@@ -12,8 +13,9 @@ in vec2 TexCoord;
 // Texture binding for 2 textures in the shader at once.
 layout (binding = 0) uniform sampler2D Tex1;
 layout (binding = 1) uniform sampler2D Tex2;
-//layout (location = 0) out vec4 FragColour;
 
+
+layout (location = 0) out vec4 FragColour;
 
 // Define 3 uniform structs.
 
@@ -28,10 +30,7 @@ uniform struct MaterialInfo {
     float Rough;    // Roughness.
     bool Metal;    // Metal or dielectric.
     vec3 Colour;    // Diffuse colour for dielectrics, f0 for metallic.
-    //float Shininess;    // Shininess factor.
 } Material;
-
-layout (location = 0) out vec4 FragColour;
 
 // Information for the fog effect.
 uniform struct FogInfo {
@@ -51,14 +50,14 @@ float ggxDistribution ( float nDotH) {
     return alpha2 / (PI * d * d);
 }
 
-// Calculate the geometric shadowing and masking terms.
+// Calculate the geometric shadowing and masking terms using the geomSmish implementation.
 float geomSmith ( float dotProd ) {
     float k = (Material.Rough + 1.0 ) * (Material.Rough + 1.0) / 8.0;
     float denom = dotProd * (1 - k) + k;
     return 1.0 / denom;
 }
 
-// Calculate refectance.
+// Calculate Fresnel reflectance using the Schlick approximation.
 vec3 schlickFresnesl (float lDotH ) {
     vec3 f0 = vec3(0.04);
     if(Material.Metal) {
@@ -76,9 +75,13 @@ vec3 microfacetModel(vec3 position, vec3 n) {
 
     vec3 l = vec3(0.0),
     lightI = Light.L;
+
+    // To calculate directional light.
     if (Light.Position.w == 0.0) {
         l = normalize(Light.Position.xyz);
-    }   else {
+    }
+    // To calculate positional light.
+    else {  
         l = Light.Position.xyz - position;
         float dist = length(l);
         l = normalize(l);

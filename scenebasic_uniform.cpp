@@ -26,7 +26,7 @@ SceneBasic_Uniform::SceneBasic_Uniform() : tPrev(0), plane(30.0f, 30.0f, 1, 1, 1
 
 void SceneBasic_Uniform::initScene() {
 	angle = 0.0;
-	rotSpeed = 1.5f;
+	rotSpeed = 3.0f;
 	compile();
 
 	glEnable(GL_DEPTH_TEST);
@@ -65,9 +65,9 @@ void SceneBasic_Uniform::update(float t)
 	if (animating())
 	{
 		angle = glm::mod(angle + deltaT * rotSpeed, glm::two_pi<float>());
-		lightPos.x = glm::cos(angle) * 3.0f;
-		lightPos.y = 3.0f;
-		lightPos.z = glm::sin(angle) * 3.0f;
+		lightPos.x = glm::cos(angle) * 2.0f;
+		lightPos.y = 2.0f;
+		lightPos.z = glm::sin(angle) * 2.0f;
 	}
 }
 
@@ -101,9 +101,9 @@ void SceneBasic_Uniform::drawScene()
 	prog.setUniform("Light.L", glm::vec3(0.4f));
 	prog.setUniform("Light.Position", view * lightPos);
 
-	prog.setUniform("Material.Rough", 0.9f);
+	prog.setUniform("Material.Rough", 0.5f);
 	prog.setUniform("Material.Metal", 1);
-	prog.setUniform("Material.Colour", glm::vec3(0.5f,0.5f, 0.5f));
+	prog.setUniform("Material.Colour", glm::vec3(1.0f, 1.0f, 1.0f));
 
 	// Load the barrel and moss textures.
 	GLuint barrelTex = Texture::loadTexture("media/texture/barrel.png");
@@ -131,7 +131,7 @@ void SceneBasic_Uniform::drawScene()
 	model = mat4(1.0f);
 	prog.setUniform("Material.Rough", 0.9f);
 	prog.setUniform("Material.Metal", 0);
-	prog.setUniform("Material.Colour", glm::vec3(0.5f));
+	prog.setUniform("Material.Colour", glm::vec3(0.3f));
 	
 	setMatrices();
 	plane.render();

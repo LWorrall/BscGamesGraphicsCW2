@@ -2,11 +2,10 @@
 #define SCENEBASIC_UNIFORM_H
 
 #include "helper/scene.h"
-#include <glad/glad.h>
+
 #include "helper/glslprogram.h"
 #include "helper/plane.h"
 #include "helper/objmesh.h"
-#include <glm/glm.hpp>
 
 
 class SceneBasic_Uniform : public Scene
