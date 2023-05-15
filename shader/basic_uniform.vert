@@ -20,10 +20,6 @@ uniform mat3 NormalMatrix;
 uniform mat4 MVP;
 uniform mat4 ProjectionMatrix;
 
-// Calculate the normal and position of the vertex in camera space.
-void getCamSpaceValues(out vec3 norm, out vec3 position){
-
-}
 
 // Set output variables and calculate the final position of the vertex.
 // Pass the vertex to the next stage in the pipeline.
