@@ -33,9 +33,6 @@ void SceneBasic_Uniform::initScene() {
 	view = glm::lookAt(vec3(0.0f, 1.5f, 2.0f), vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	projection = mat4(1.0f);
 
-	prog.setUniform("Light.L", glm::vec3(0.4f));
-	prog.setUniform("Light.Position", view * lightPos);
-
 	prog.setUniform("Fog.MaxDist", 15.0f);
 	prog.setUniform("Fog.MinDist", 5.0f);
 	prog.setUniform("Fog.Colour", vec3(0.5f, 0.5f, 0.5f));
@@ -68,9 +65,9 @@ void SceneBasic_Uniform::update(float t)
 	if (animating())
 	{
 		angle = glm::mod(angle + deltaT * rotSpeed, glm::two_pi<float>());
-		lightPos.x = glm::cos(angle) * 7.0f;
+		lightPos.x = glm::cos(angle) * 3.0f;
 		lightPos.y = 3.0f;
-		lightPos.z = glm::sin(angle) * 7.0f;
+		lightPos.z = glm::sin(angle) * 3.0f;
 	}
 }
 
@@ -101,6 +98,9 @@ void BindandSetParams(GLuint tex, int index)
 
 void SceneBasic_Uniform::drawScene()
 {
+	prog.setUniform("Light.L", glm::vec3(0.4f));
+	prog.setUniform("Light.Position", view * lightPos);
+
 	prog.setUniform("Material.Rough", 0.9f);
 	prog.setUniform("Material.Metal", 1);
 	prog.setUniform("Material.Colour", glm::vec3(0.5f,0.5f, 0.5f));
@@ -140,8 +140,6 @@ void SceneBasic_Uniform::drawScene()
 void SceneBasic_Uniform::render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	prog.setUniform("Light.Position", view * lightPos);
 	drawScene();
 }
 
@@ -159,5 +157,5 @@ void SceneBasic_Uniform::setMatrices()
 	prog.setUniform("ModelViewMatrix", mv);
 	prog.setUniform("NormalMatrix", glm::mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2])));
 	prog.setUniform("MVP", projection * mv);
-	prog.setUniform("ProjectioMatrix", projection);
+	prog.setUniform("ProjectionMatrix", projection);
 }

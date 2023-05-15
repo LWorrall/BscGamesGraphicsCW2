@@ -40,18 +40,25 @@ uniform struct FogInfo {
     vec3 Colour;    // Fog colour.
 } Fog;
 
+
+
+// PBR shading implementation.
+
+// Calculate Gaussiam distribution term for the distribution of microfacets on a surface.
 float ggxDistribution ( float nDotH) {
     float alpha2 = Material.Rough * Material.Rough * Material.Rough * Material.Rough;
     float d = (nDotH * nDotH) * (alpha2 - 1) + 1;
     return alpha2 / (PI * d * d);
 }
 
+// Calculate the geometric shadowing and masking terms.
 float geomSmith ( float dotProd ) {
     float k = (Material.Rough + 1.0 ) * (Material.Rough + 1.0) / 8.0;
     float denom = dotProd * (1 - k) + k;
     return 1.0 / denom;
 }
 
+// Calculate refectance.
 vec3 schlickFresnesl (float lDotH ) {
     vec3 f0 = vec3(0.04);
     if(Material.Metal) {
@@ -60,6 +67,7 @@ vec3 schlickFresnesl (float lDotH ) {
     return f0 + (1 - f0) * pow(1.0 - lDotH, 5);
 }
 
+// Calculate final colour using the above terms.
 vec3 microfacetModel(vec3 position, vec3 n) {
     vec3 diffuseBrdf = vec3(0.0);   // Metallic.
     if (!Material.Metal) {
