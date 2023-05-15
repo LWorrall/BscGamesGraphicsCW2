@@ -1,2 +1,14 @@
-﻿  scenebasic_uniform.cpp
-  Project_Template.vcxproj -> C:\Users\user\Documents\Work Stuff\Education\BSc Software Engineering\Assignments\COMP 3015 Games Graphics Pipelines\Coursework 2\Project_Template v7 Single Light\x64\Debug\Project_Template.exe
+﻿  glslprogram.cpp
+  glutils.cpp
+  objmesh.cpp
+C:\Users\Li\Documents\Bsc Computer Science\Coursework\COMP3015 Games Graphics Pipelines\Shadow Map Attempt\helper\objmesh.cpp(188,41): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Li\Documents\Bsc Computer Science\Coursework\COMP3015 Games Graphics Pipelines\Shadow Map Attempt\helper\objmesh.cpp(194,48): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Li\Documents\Bsc Computer Science\Coursework\COMP3015 Games Graphics Pipelines\Shadow Map Attempt\helper\objmesh.cpp(198,43): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+  plane.cpp
+  stb_image.cpp
+  texture.cpp
+  trianglemesh.cpp
+  main.cpp
+  scenebasic_uniform.cpp
+  Generating Code...
+  Project_Template.vcxproj -> C:\Users\Li\Documents\Bsc Computer Science\Coursework\COMP3015 Games Graphics Pipelines\Shadow Map Attempt\x64\Debug\Project_Template.exe

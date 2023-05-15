@@ -20,7 +20,7 @@ using glm::mat3;
 using glm::mat4;
 
 // Load a plane and the barrel object.
-SceneBasic_Uniform::SceneBasic_Uniform() : tPrev(0), plane(30.0f, 30.0f, 1, 1, 10.0f, 10.0f) {
+SceneBasic_Uniform::SceneBasic_Uniform() : tPrev(0), shadowMapWidth(512), shadowMapHeight(512), plane(30.0f, 30.0f, 1, 1, 10.0f, 10.0f) {
 	barrel = ObjMesh::load("media/barrel.obj", false, true);
 }
 
@@ -30,6 +30,27 @@ void SceneBasic_Uniform::initScene() {
 	compile();
 
 	glEnable(GL_DEPTH_TEST);
+
+	setupFBO();
+
+	GLuint programHandle = prog.getHandle();
+	pass1Index = glGetSubroutineIndex(programHandle, GL_FRAGMENT_SHADER, "recordDepth");
+	pass2Index = glGetSubroutineIndex(programHandle, GL_FRAGMENT_SHADER, "shadeWithShadow");
+
+	shadowBias = mat4(vec4(0.5f, 0.0f, 0.0f, 0.0f),
+		vec4(0.0f, 0.5f, 0.0f, 0.0f),
+		vec4(0.0f, 0.0f, 0.5f, 0.0f),
+		vec4(0.5f, 0.5f, 0.5f, 1.0f)
+	);
+
+	float c = 1.65f;
+	
+
+	lightFrustum.orient(lightPos, vec3(0.0f), vec3(0.0f, 1.0f, 0.0f));
+	lightFrustum.setPerspective(50.0f, 1.0f, 1.0f, 25.0f);
+	lightPV = shadowBias * lightFrustum.getProjectionMatrix() * lightFrustum.getViewMatrix();
+
+
 	view = glm::lookAt(vec3(0.0f, 1.5f, 2.0f), vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	projection = mat4(1.0f);
 
@@ -39,7 +60,37 @@ void SceneBasic_Uniform::initScene() {
 	prog.setUniform("Fog.MaxDist", 15.0f);
 	prog.setUniform("Fog.MinDist", 5.0f);
 	prog.setUniform("Fog.Colour", vec3(0.5f, 0.5f, 0.5f));
+
+	prog.setUniform("ShadowMap", 0);
 }
+
+void SceneBasic_Uniform::setupFBO()
+{
+	GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+	// The depth buffer texture.
+	GLuint depthTex;
+	glGenTextures(1, &depthTex);
+
+	glBindTexture(GL_TEXTURE_2D, depthTex);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT24, shadowMapWidth, shadowMapHeight);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+
+	// Assign the depth buffer texture to texture channel 0.#
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthTex);
+
+	// Create and set up the FBO.
+	glGenFramebuffers(1, &shadowFBO);
+
+}
+
 
 void SceneBasic_Uniform::compile()
 {

@@ -40,6 +40,11 @@ uniform struct FogInfo {
     vec3 Colour;    // Fog colour.
 } Fog;
 
+// Shadows. 
+uniform sampler2DShadow ShadowMap;
+in vec4 ShadowCoord;
+
+
 float ggxDistribution ( float nDotH) {
     float alpha2 = Material.Rough * Material.Rough * Material.Rough * Material.Rough;
     float d = (nDotH * nDotH) * (alpha2 - 1) + 1;
@@ -96,17 +101,33 @@ vec3 microfacetModel(vec3 position, vec3 n) {
     return finalColour;
 }
 
+subroutine void RenderPassType();
+subroutine uniform RenderPassType RenderPass;
 
-void main() {
-
-    // For 3 lights.
+subroutine (RenderPassType)
+void shadeWithShadow()
+{
     vec3 sum = vec3(0);
     vec3 n = normalize(Normal);
-    sum += microfacetModel(Position, n);
 
+    vec3 ambient = Light.L * Material.Colour;
+
+    sum = microfacetModel(Position, n);
+
+    float shadow = 1.0;
+    if(ShadowCoord.z >= 0 ) {
+        shadow = textureProj(ShadowMap, ShadowCoord);
+    }
+
+    // If the fragment is in shadow, use ambient light only.
+    FragColour = vec4(sum * shadow + ambient, 1.0);
+    
     // Calculate gamma.
     sum = pow( sum, vec3(1.0/2.2) );
     float dist = abs( Position.z ); // Distance calculations.
+
+    // Gamma correction.
+    FragColour = pow( FragColour, vec4(1.0 / 2.2) );
 
     // FogFactor calculation.
     float fogFactor = (Fog.MaxDist - dist) / (Fog.MaxDist - Fog.MinDist);
@@ -115,4 +136,14 @@ void main() {
     // Assign a colour based on the fogFactor using mix.
     vec3 colour = mix( Fog.Colour, sum, fogFactor );
     FragColour = vec4(colour, 1.0);   // Final colour.
+}
+
+subroutine (RenderPassType)
+void recordDepth()
+{
+    // Do nothing. Depth will be writtern automatically.
+}
+
+void main() {
+    RenderPass();
 }

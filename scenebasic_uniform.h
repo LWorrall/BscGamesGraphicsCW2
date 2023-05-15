@@ -14,6 +14,13 @@ class SceneBasic_Uniform : public Scene
 private:
     GLSLProgram prog;
 
+    GLSLProgram solidProg;
+    GLuint shadowFBO, pass1Index, pass2Index;
+
+    int shadowMapWidth, shadowMapHeight;
+    glm::mat4 lightPV, shadowBias;
+    Frustum lightFrustum;
+
     Plane plane;
     std::unique_ptr<ObjMesh> barrel;
     
@@ -31,6 +38,9 @@ public:
     void drawScene();
     void resize(int, int);
     void setMatrices();
+
+    void setupFBO();
+    void spitOutDepthBuffer();
 };
 
 #endif // SCENEBASIC_UNIFORM_H
